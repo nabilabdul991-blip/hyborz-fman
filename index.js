@@ -6,7 +6,6 @@ const {
 
 const readline = require("readline");
 
-// ================= INPUT NOMOR =================
 function question(text) {
     const rl = readline.createInterface({
         input: process.stdin,
@@ -23,7 +22,6 @@ function question(text) {
 
 async function startBot() {
 
-    // ================= SESSION =================
     const { state, saveCreds } = await useMultiFileAuthState("./session");
     const { version } = await fetchLatestBaileysVersion();
 
@@ -34,27 +32,20 @@ async function startBot() {
 
     sock.ev.on("creds.update", saveCreds);
 
-    // ================= PAIRING CODE =================
     if (!sock.authState.creds.registered) {
-        const number = await question("📱 Masukkan nomor (62xxxx): ");
-
+        const number = await question("Masukkan nomor 62xxxx: ");
         const code = await sock.requestPairingCode(number.trim());
 
-        console.log("\n🔑 KODE PAIRING:");
+        console.log("PAIRING CODE:");
         console.log(code);
-        console.log("\n👉 Masukkan di WhatsApp > Perangkat Tertaut");
     }
 
-    // ================= CONNECTION =================
     sock.ev.on("connection.update", (update) => {
-        const { connection } = update;
-
-        if (connection === "open") {
-            console.log("🤖 BOT CONNECTED");
+        if (update.connection === "open") {
+            console.log("BOT CONNECTED");
         }
     });
 
-    // ================= MESSAGE HANDLER (INTI BOT) =================
     sock.ev.on("messages.upsert", async (m) => {
         try {
 
@@ -66,16 +57,21 @@ async function startBot() {
             const text =
                 msg.message.conversation ||
                 msg.message.extendedTextMessage?.text ||
-                msg.message.imageMessage?.caption ||
-                msg.message.videoMessage?.caption ||
                 "";
 
             const body = text.toLowerCase().trim();
 
-            console.log("📩:", body);
-
-            // ================= COMMAND =================
-
             if (body === "menu") {
                 await sock.sendMessage(from, {
-                    text: "🤖 MENU BOT AKTIF\n\n✔ menu\n✔ allmenu\n✔ store\n✔ ping
+                    text: "BOT AKTIF"
+                });
+            }
+
+        } catch (e) {
+            console.log(e);
+        }
+    });
+
+}
+
+startBot();
