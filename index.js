@@ -1,4 +1,3 @@
-process.removeAllListeners("warning");
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -7,6 +6,7 @@ const {
 
 const readline = require("readline");
 
+// ================= INPUT NOMOR =================
 function question(text) {
     const rl = readline.createInterface({
         input: process.stdin,
@@ -21,6 +21,32 @@ function question(text) {
     });
 }
 
+// ================= MENU AKAR =================
+async function menuAkar(sock, jid) {
+    const teks = `
+🌳 *AKAR BOT MENU*
+
+🤖 MENU
+- menu
+- allmenu
+
+⚡ INFO
+- ping
+- profile
+
+🛒 STORE
+- store
+- buy
+
+👑 OWNER
+- addowner
+- delowner
+`;
+
+    await sock.sendMessage(jid, { text: teks });
+}
+
+// ================= START BOT =================
 async function startBot() {
 
     const { state, saveCreds } = await useMultiFileAuthState("./session");
@@ -33,20 +59,25 @@ async function startBot() {
 
     sock.ev.on("creds.update", saveCreds);
 
+    // ================= PAIRING CODE =================
     if (!sock.authState.creds.registered) {
-        const number = await question("Masukkan nomor 62xxxx: ");
+        const number = await question("📱 Masukkan nomor (62xxxx): ");
+
         const code = await sock.requestPairingCode(number.trim());
 
-        console.log("PAIRING CODE:");
+        console.log("\n🔑 KODE PAIRING:");
         console.log(code);
+        console.log("\n👉 Masukkan di WhatsApp > Perangkat Tertaut");
     }
 
+    // ================= CONNECT =================
     sock.ev.on("connection.update", (update) => {
         if (update.connection === "open") {
-            console.log("BOT CONNECTED");
+            console.log("🤖 BOT AKTIF");
         }
     });
 
+    // ================= MESSAGE HANDLER =================
     sock.ev.on("messages.upsert", async (m) => {
         try {
 
@@ -58,18 +89,54 @@ async function startBot() {
             const text =
                 msg.message.conversation ||
                 msg.message.extendedTextMessage?.text ||
+                msg.message.imageMessage?.caption ||
+                msg.message.videoMessage?.caption ||
                 "";
 
             const body = text.toLowerCase().trim();
 
-            if (body === "menu") {
+            console.log("📩:", body);
+
+            // ================= MENU =================
+            if (body === "menu" || body === "allmenu") {
+                await menuAkar(sock, from);
+            }
+
+            // ================= PING =================
+            if (body === "ping") {
+                const start = Date.now();
+                await sock.sendMessage(from, { text: "🏓 Pong!" });
+                const end = Date.now();
+
                 await sock.sendMessage(from, {
-                    text: "BOT AKTIF"
+                    text: `⚡ Speed: ${end - start}ms`
+                });
+            }
+
+            // ================= PROFILE =================
+            if (body === "profile") {
+                const sender = msg.key.participant || from;
+
+                await sock.sendMessage(from, {
+                    text: `👤 USER ID:\n${sender}`
+                });
+            }
+
+            // ================= STORE SIMPLE =================
+            if (body === "store") {
+                await sock.sendMessage(from, {
+                    text: "🛒 Store belum diisi produk"
+                });
+            }
+
+            if (body.startsWith("buy ")) {
+                await sock.sendMessage(from, {
+                    text: "❌ Produk belum tersedia"
                 });
             }
 
         } catch (e) {
-            console.log(e);
+            console.log("ERROR:", e);
         }
     });
 
