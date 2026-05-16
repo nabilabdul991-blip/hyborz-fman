@@ -95,5 +95,12 @@ sock.ev.on("messages.upsert", async (m) => {
 
     await groupMode(sock, msg);
 });
-    }
+    }const pinChat = require("./plugins/pinchat");
+
+sock.ev.on("messages.upsert", async (m) => {
+    const msg = m.messages[0];
+    if (!msg.message) return;
+
+    await pinChat(sock, msg);
+});
 });
