@@ -1,147 +1,112 @@
 const { default: makeWASocket } = require("@whiskeysockets/baileys");
 const config = require("./settings");
 
-// import fitur
+// ================= PLUGINS =================
 const antilink = require("./lib/antilink");
 
-async function startBot() {
-    const sock = makeWASocket();
-
-    sock.ev.on("messages.upsert", async (m) => {
-        const msg = m.messages[0];
-        if (!msg.message) return;
-
-        const text = msg.message.conversation || "";
-        const from = msg.key.remoteJid;
-
-        // 🔥 ANTI LINK
-        await antilink(sock, msg);
-
-        // contoh command simple
-        if (text === ".menu") {
-            await sock.sendMessage(from, { text: "Menu Bot Aktif" });
-        }
-    });
-}
-
-startBot();
-const adzan = require("./plugins/adzan");
-
-// ambil semua grup
-sock.ev.on("connection.update", async () => {
-    setInterval(async () => {
-        const groups = await sock.groupFetchAllParticipating();
-
-        for (let jid in groups) {
-            await adzan(sock, jid);
-        }
-    }, 60000); // cek tiap 1 menit
-});
 const menu = require("./plugins/menu");
 const sound = require("./plugins/sound");
 
-sock.ev.on("messages.upsert", async (m) => {
-    const msg = m.messages[0];
-    if (!msg.message) return;
-
-    const from = msg.key.remoteJid;
-    const text = msg.message.conversation || "";
-
-    const cmd = text.toLowerCase();
-
-    // 🔥 MENU & ALLMENU TRIGGER
-    if (cmd === "menu" || cmd === "allmenu") {
-
-        // ⌨️ typing effect
-        await sock.sendPresenceUpdate('composing', from);
-        await new Promise(r => setTimeout(r, 1500));
-
-        // 📋 kirim menu
-        await menu(sock, from, config);
-
-        // 🔊 kirim sound
-        await sound(sock, from, "./media/menu.mp3");
-
-        await sock.sendPresenceUpdate('available', from);
-    }
-});
 const owner = require("./plugins/owner");
 
-sock.ev.on("messages.upsert", async (m) => {
-    const msg = m.messages[0];
-    const from = msg.key.remoteJid;
-    const sender = msg.key.participant || msg.key.remoteJid;
-    const text = msg.message.conversation || "";
+const groupMode = require("./plugins/groupmode");
+const pinChat = require("./plugins/pinchat");
 
-    // ➕ ADD OWNER
-    if (text.startsWith(".addowner ")) {
-        let num = text.replace(".addowner ", "");
-        let res = owner.addOwner(num);
-
-        await sock.sendMessage(from, { text: res });
-    }
-
-    // ➖ DEL OWNER
-    if (text.startsWith(".delowner ")) {
-        let num = text.replace(".delowner ", "");
-        let res = owner.delOwner(num);
-
-        await sock.sendMessage(from, { text: res });
-        const groupMode = require("./plugins/groupmode");
-
-sock.ev.on("messages.upsert", async (m) => {
-    const msg = m.messages[0];
-    if (!msg.message) return;
-
-    await groupMode(sock, msg);
-});
-    }const pinChat = require("./plugins/pinchat");
-
-sock.ev.on("messages.upsert", async (m) => {
-    const msg = m.messages[0];
-    if (!msg.message) return;
-
-    await pinChat(sock, msg);
-});
-});const toimg = require("./plugins/toimg");
+const toimg = require("./plugins/toimg");
 const brat = require("./plugins/brat");
 
-sock.ev.on("messages.upsert", async (m) => {
-    const msg = m.messages[0];
-    if (!msg.message) return;
-
-    await toimg(sock, msg);
-    await brat(sock, msg);
-});
 const store = require("./plugins/store");
 
-sock.ev.on("messages.upsert", async (m) => {
-    const msg = m.messages[0];
-    if (!msg.message) return;
-
-    const from = msg.key.remoteJid;
-    const text = msg.message.conversation || "";
-
-    // 📋 LIST STORE
-    if (text === "store" || text === "list") {
-        await store.list(sock, from);
-    }
-
-    // 🛒 BUY
-    if (text.startsWith("buy ")) {
-        const id = text.replace("buy ", "").trim();
-        await store.buy(sock, from, id);
-    }
-});
 const ping = require("./plugins/ping");
 const profile = require("./plugins/profile");
 const google = require("./plugins/google");
 
-sock.ev.on("messages.upsert", async (m) => {
-    const msg = m.messages[0];
-    if (!msg.message) return;
+const adzan = require("./plugins/adzan");
 
-    await ping(sock, msg);
-    await profile(sock, msg);
-    await google(sock, msg);
+// ================= START BOT =================
+async function startBot() {
+    const sock = makeWASocket();
+
+    // ================= MESSAGE HANDLER =================
+    sock.ev.on("messages.upsert", async (m) => {
+        const msg = m.messages[0];
+        if (!msg || !msg.message) return;
+
+        const from = msg.key.remoteJid;
+        const sender = msg.key.participant || msg.key.remoteJid;
+
+        const text =
+            msg.message.conversation ||
+            msg.message.extendedTextMessage?.text ||
+            "";
+
+        const cmd = text.toLowerCase();
+
+        // ================= ANTI LINK =================
+        await antilink(sock, msg);
+
+        // ================= MENU =================
+        if (cmd === "menu" || cmd === "allmenu") {
+            await sock.sendPresenceUpdate("composing", from);
+            await new Promise((r) => setTimeout(r, 1500));
+
+            await menu(sock, from, config);
+            await sound(sock, from, "./media/menu.mp3");
+
+            await sock.sendPresenceUpdate("available", from);
+        }
+
+        // ================= OWNER =================
+        if (text.startsWith(".addowner ")) {
+            let num = text.replace(".addowner ", "").trim();
+            let res = owner.addOwner(num);
+            await sock.sendMessage(from, { text: res });
+        }
+
+        if (text.startsWith(".delowner ")) {
+            let num = text.replace(".delowner ", "").trim();
+            let res = owner.delOwner(num);
+            await sock.sendMessage(from, { text: res });
+        }
+
+        // ================= STORE =================
+        if (cmd === "store" || cmd === "list") {
+            await store.list(sock, from);
+        }
+
+        if (text.startsWith("buy ")) {
+            let id = text.replace("buy ", "").trim();
+            await store.buy(sock, from, id);
+        }
+
+        // ================= GROUP CONTROL =================
+        await groupMode(sock, msg);
+
+        // ================= PIN CHAT =================
+        await pinChat(sock, msg);
+
+        // ================= MEDIA FEATURES =================
+        await toimg(sock, msg);
+        await brat(sock, msg);
+
+        // ================= INFO FEATURES =================
+        await ping(sock, msg);
+        await profile(sock, msg);
+        await google(sock, msg);
+    });
+
+    // ================= ADZAN LOOP =================
+    setInterval(async () => {
+        try {
+            const groups = await sock.groupFetchAllParticipating();
+
+            for (let jid in groups) {
+                await adzan(sock, jid);
+            }
+        } catch (e) {
+            console.log("Adzan error:", e);
+        }
+    }, 60000);
 }
+
+startBot();
