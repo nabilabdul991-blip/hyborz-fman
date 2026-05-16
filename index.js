@@ -87,5 +87,13 @@ sock.ev.on("messages.upsert", async (m) => {
         let res = owner.delOwner(num);
 
         await sock.sendMessage(from, { text: res });
+        const groupMode = require("./plugins/groupmode");
+
+sock.ev.on("messages.upsert", async (m) => {
+    const msg = m.messages[0];
+    if (!msg.message) return;
+
+    await groupMode(sock, msg);
+});
     }
 });
