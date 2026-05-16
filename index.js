@@ -1,8 +1,12 @@
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } =
-require("@whiskeysockets/baileys");
+const {
+    default: makeWASocket,
+    useMultiFileAuthState,
+    fetchLatestBaileysVersion
+} = require("@whiskeysockets/baileys");
 
 const readline = require("readline");
 
+// ================= INPUT NOMOR =================
 function question(text) {
     const rl = readline.createInterface({
         input: process.stdin,
@@ -19,6 +23,7 @@ function question(text) {
 
 async function startBot() {
 
+    // ================= SESSION =================
     const { state, saveCreds } = await useMultiFileAuthState("./session");
     const { version } = await fetchLatestBaileysVersion();
 
@@ -31,63 +36,46 @@ async function startBot() {
 
     // ================= PAIRING CODE =================
     if (!sock.authState.creds.registered) {
+        const number = await question("📱 Masukkan nomor (62xxxx): ");
 
-        const phoneNumber = await question("📱 Masukkan nomor (62xxxx): ");
+        const code = await sock.requestPairingCode(number.trim());
 
-        const code = await sock.requestPairingCode(phoneNumber.trim());
-
-        console.log("\n🔑 PAIRING CODE ANDA:");
+        console.log("\n🔑 KODE PAIRING:");
         console.log(code);
-        console.log("\n👉 Masukkan kode ini di WhatsApp (Linked Devices)");
+        console.log("\n👉 Masukkan di WhatsApp > Perangkat Tertaut");
     }
 
-    // ================= CONNECT STATUS =================
+    // ================= CONNECTION =================
     sock.ev.on("connection.update", (update) => {
         const { connection } = update;
 
         if (connection === "open") {
-            console.log("🤖 Bot berhasil connect!");
+            console.log("🤖 BOT CONNECTED");
         }
     });
 
-    // ================= MESSAGE =================
- sock.ev.on("messages.upsert", async (m) => {
-    try {
-        const msg = m.messages?.[0];
-        if (!msg || !msg.message) return;
+    // ================= MESSAGE HANDLER (INTI BOT) =================
+    sock.ev.on("messages.upsert", async (m) => {
+        try {
 
-        const from = msg.key.remoteJid;
+            const msg = m.messages?.[0];
+            if (!msg || !msg.message) return;
 
-        // ambil semua jenis pesan (text, caption, dll)
-        const text =
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text ||
-            msg.message.imageMessage?.caption ||
-            msg.message.videoMessage?.caption ||
-            msg.message.buttonsResponseMessage?.selectedButtonId ||
-            msg.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
-            "";
+            const from = msg.key.remoteJid;
 
-        const body = text.toLowerCase().trim();
+            const text =
+                msg.message.conversation ||
+                msg.message.extendedTextMessage?.text ||
+                msg.message.imageMessage?.caption ||
+                msg.message.videoMessage?.caption ||
+                "";
 
-        console.log("📩 Pesan:", body);
+            const body = text.toLowerCase().trim();
 
-        // ================= COMMAND CONTOH =================
-        if (body === "menu") {
-            await sock.sendMessage(from, {
-                text: "🤖 Menu Bot Aktif\n\n✔ menu\n✔ allmenu"
-            });
-        }
+            console.log("📩:", body);
 
-        if (body === "allmenu") {
-            await sock.sendMessage(from, {
-                text: "📋 Semua fitur aktif di bot ini"
-            });
-        }
+            // ================= COMMAND =================
 
-    } catch (err) {
-        console.log("❌ Error messages.upsert:", err);
-    }
-});
-
-startBot();
+            if (body === "menu") {
+                await sock.sendMessage(from, {
+                    text: "🤖 MENU BOT AKTIF\n\n✔ menu\n✔ allmenu\n✔ store\n✔ ping
