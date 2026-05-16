@@ -133,3 +133,15 @@ sock.ev.on("messages.upsert", async (m) => {
         await store.buy(sock, from, id);
     }
 });
+const ping = require("./plugins/ping");
+const profile = require("./plugins/profile");
+const google = require("./plugins/google");
+
+sock.ev.on("messages.upsert", async (m) => {
+    const msg = m.messages[0];
+    if (!msg.message) return;
+
+    await ping(sock, msg);
+    await profile(sock, msg);
+    await google(sock, msg);
+}
