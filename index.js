@@ -25,3 +25,15 @@ async function startBot() {
 }
 
 startBot();
+const adzan = require("./plugins/adzan");
+
+// ambil semua grup
+sock.ev.on("connection.update", async () => {
+    setInterval(async () => {
+        const groups = await sock.groupFetchAllParticipating();
+
+        for (let jid in groups) {
+            await adzan(sock, jid);
+        }
+    }, 60000); // cek tiap 1 menit
+});
