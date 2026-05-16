@@ -51,20 +51,43 @@ async function startBot() {
     });
 
     // ================= MESSAGE =================
-    sock.ev.on("messages.upsert", async (m) => {
-        const msg = m.messages[0];
+ sock.ev.on("messages.upsert", async (m) => {
+    try {
+        const msg = m.messages?.[0];
         if (!msg || !msg.message) return;
 
         const from = msg.key.remoteJid;
+
+        // ambil semua jenis pesan (text, caption, dll)
         const text =
             msg.message.conversation ||
             msg.message.extendedTextMessage?.text ||
+            msg.message.imageMessage?.caption ||
+            msg.message.videoMessage?.caption ||
+            msg.message.buttonsResponseMessage?.selectedButtonId ||
+            msg.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
             "";
 
-        if (text === "menu") {
-            await sock.sendMessage(from, { text: "✅ Bot aktif (pairing mode)" });
+        const body = text.toLowerCase().trim();
+
+        console.log("📩 Pesan:", body);
+
+        // ================= COMMAND CONTOH =================
+        if (body === "menu") {
+            await sock.sendMessage(from, {
+                text: "🤖 Menu Bot Aktif\n\n✔ menu\n✔ allmenu"
+            });
         }
-    });
-}
+
+        if (body === "allmenu") {
+            await sock.sendMessage(from, {
+                text: "📋 Semua fitur aktif di bot ini"
+            });
+        }
+
+    } catch (err) {
+        console.log("❌ Error messages.upsert:", err);
+    }
+});
 
 startBot();
