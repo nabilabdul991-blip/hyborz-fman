@@ -103,4 +103,13 @@ sock.ev.on("messages.upsert", async (m) => {
 
     await pinChat(sock, msg);
 });
+});const toimg = require("./plugins/toimg");
+const brat = require("./plugins/brat");
+
+sock.ev.on("messages.upsert", async (m) => {
+    const msg = m.messages[0];
+    if (!msg.message) return;
+
+    await toimg(sock, msg);
+    await brat(sock, msg);
 });
