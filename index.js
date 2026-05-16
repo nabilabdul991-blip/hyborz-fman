@@ -1,10 +1,21 @@
-const { default: makeWASocket } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
 
 async function startBot() {
-    const sock = makeWASocket();
 
-    console.log("🤖 Bot berhasil dijalankan");
+    // 🔐 SESSION AUTH (INI YANG KURANG DI KAMU)
+    const { state, saveCreds } = await useMultiFileAuthState("./session");
 
+    const sock = makeWASocket({
+        auth: state,
+        printQRInTerminal: true
+    });
+
+    // simpan session otomatis
+    sock.ev.on("creds.update", saveCreds);
+
+    console.log("🤖 Bot jalan... scan QR kalau diminta");
+
+    // ================= MESSAGE =================
     sock.ev.on("messages.upsert", async (m) => {
         const msg = m.messages[0];
         if (!msg || !msg.message) return;
@@ -15,12 +26,8 @@ async function startBot() {
             msg.message.extendedTextMessage?.text ||
             "";
 
-        console.log("Pesan masuk:", text);
-
         if (text === "menu") {
-            await sock.sendMessage(from, {
-                text: "✅ Bot aktif & index.js tidak error"
-            });
+            await sock.sendMessage(from, { text: "✅ Bot sudah FIX dan jalan" });
         }
     });
 }
