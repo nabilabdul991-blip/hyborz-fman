@@ -1,3 +1,4 @@
+process.removeAllListeners("warning");
 const {
     default: makeWASocket,
     useMultiFileAuthState,
