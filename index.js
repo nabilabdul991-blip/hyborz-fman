@@ -65,3 +65,27 @@ sock.ev.on("messages.upsert", async (m) => {
         await sock.sendPresenceUpdate('available', from);
     }
 });
+const owner = require("./plugins/owner");
+
+sock.ev.on("messages.upsert", async (m) => {
+    const msg = m.messages[0];
+    const from = msg.key.remoteJid;
+    const sender = msg.key.participant || msg.key.remoteJid;
+    const text = msg.message.conversation || "";
+
+    // ➕ ADD OWNER
+    if (text.startsWith(".addowner ")) {
+        let num = text.replace(".addowner ", "");
+        let res = owner.addOwner(num);
+
+        await sock.sendMessage(from, { text: res });
+    }
+
+    // ➖ DEL OWNER
+    if (text.startsWith(".delowner ")) {
+        let num = text.replace(".delowner ", "");
+        let res = owner.delOwner(num);
+
+        await sock.sendMessage(from, { text: res });
+    }
+});
