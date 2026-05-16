@@ -113,3 +113,23 @@ sock.ev.on("messages.upsert", async (m) => {
     await toimg(sock, msg);
     await brat(sock, msg);
 });
+const store = require("./plugins/store");
+
+sock.ev.on("messages.upsert", async (m) => {
+    const msg = m.messages[0];
+    if (!msg.message) return;
+
+    const from = msg.key.remoteJid;
+    const text = msg.message.conversation || "";
+
+    // 📋 LIST STORE
+    if (text === "store" || text === "list") {
+        await store.list(sock, from);
+    }
+
+    // 🛒 BUY
+    if (text.startsWith("buy ")) {
+        const id = text.replace("buy ", "").trim();
+        await store.buy(sock, from, id);
+    }
+});
